@@ -42,7 +42,7 @@ class tvip_apb_master_driver extends tue_driver #(
       end
       else begin
         if ((state == ACCESS) && vif.master_cb.pack) begin
-          sample_respnse();
+          sample_response();
         end
 
         if (state == CONSUME_IPG) begin
