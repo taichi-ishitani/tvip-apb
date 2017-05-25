@@ -41,10 +41,11 @@ class tvip_apb_master_ral_adapter extends uvm_reg_adapter;
   virtual function void bus2reg(uvm_sequence_item bus_item, ref uvm_reg_bus_op rw);
     tvip_apb_master_item  apb_item;
     $cast(apb_item, bus_item);
-    rw.status = (apb_item.slave_error) ? UVM_NOT_OK : UVM_IS_OK;
-    if (apb_item.is_read()) begin
-      rw.data = apb_item.data;
-    end
+    rw.addr     = apb_item.address;
+    rw.kind     = (apb_item.is_write()) ? UVM_WRITE : UVM_READ;
+    rw.data     = apb_item.data;
+    rw.byte_en  = (apb_item.is_write()) ? apb_item.strobe : '1;
+    rw.status   = (apb_item.slave_error) ? UVM_NOT_OK : UVM_IS_OK;
   endfunction
 
   `uvm_object_utils(tvip_apb_master_ral_adapter)
