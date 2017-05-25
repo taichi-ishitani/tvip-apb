@@ -32,7 +32,7 @@ package tvip_apb_pkg;
   `include  "tvip_apb_configuration.svh"
   `include  "tvip_apb_status.svh"
   `include  "tvip_apb_item.svh"
-  `include  "tvip_apb_monitor._base.svh"
+  `include  "tvip_apb_monitor_base.svh"
 
   `include  "tvip_apb_master_monitor.svh"
   `include  "tvip_apb_master_sequencer.svh"
