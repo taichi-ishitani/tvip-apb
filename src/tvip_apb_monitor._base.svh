@@ -15,7 +15,7 @@
 //------------------------------------------------------------------------------
 `ifndef TVIP_APB_MONITOR_BASE_SVH
 `define TVIP_APB_MONITOR_BASE_SVH
-class tvip_master_base_monitor #(
+class tvip_apb_monitor_base #(
   type  ITEM  = tvip_apb_master_item
 ) extends tue_param_monitor #(
   tvip_apb_configuration, tvip_apb_status, ITEM
@@ -50,6 +50,7 @@ class tvip_master_base_monitor #(
   endfunction
 
   virtual function void sample_request();
+    in_progress     = 1;
     item            = create_item("master_item");
     item.address    = vif.monitor_cb.paddr;
     item.direction  = tvip_apb_direction'(vif.monitor_cb.pwrite);
@@ -70,6 +71,6 @@ class tvip_master_base_monitor #(
     in_progress = 0;
   endfunction
 
-  `tue_component_default_constructor(tvip_master_base_monitor)
+  `tue_component_default_constructor(tvip_apb_monitor_base)
 endclass
 `endif

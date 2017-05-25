@@ -15,7 +15,7 @@
 //------------------------------------------------------------------------------
 `ifndef TVIP_APB_MASTER_MONITOR_SVH
 `define TVIP_APB_MASTER_MONITOR_SVH
-class tvip_apb_master_monitor extends tvip_master_base_monitor #(tvip_apb_master_item);
+class tvip_apb_master_monitor extends tvip_apb_monitor_base #(tvip_apb_master_item);
   `tue_component_default_constructor (tvip_apb_master_monitor)
   `uvm_component_utils(tvip_apb_master_monitor)
 endclass
