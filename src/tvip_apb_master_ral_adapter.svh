@@ -26,7 +26,7 @@ class tvip_apb_master_ral_adapter extends uvm_reg_adapter;
     tvip_apb_master_item  apb_item  = tvip_apb_master_item::type_id::create("apb_item");
     apb_item.address    = rw.addr;
     apb_item.direction  = (rw.kind == UVM_WRITE) ? TVIP_APB_WRITE : TVIP_APB_READ;
-    apb_item.protection = tvip_apb_protection'(0);
+    apb_item.set_protection(0);
     if (apb_item.is_write()) begin
       apb_item.data   = rw.data;
       apb_item.strobe = rw.byte_en;

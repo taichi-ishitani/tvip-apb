@@ -82,7 +82,7 @@ class tvip_apb_master_driver extends tue_driver #(
     vif.master_cb.psel    <= '1;
     vif.master_cb.paddr   <= item.address;
     vif.master_cb.pwrite  <= item.is_write();
-    vif.master_cb.pprot   <= item.protection;
+    vif.master_cb.pprot   <= item.get_protection();
     if (item.is_write()) begin
       vif.master_cb.pwdata  <= item.data;
       vif.master_cb.pstrb   <= item.strobe;

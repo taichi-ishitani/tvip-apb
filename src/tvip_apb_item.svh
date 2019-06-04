@@ -18,12 +18,14 @@
 class tvip_apb_item extends tvip_common_item #(
   tvip_apb_configuration, tvip_apb_status
 );
-  rand  tvip_apb_address    address;
-  rand  tvip_apb_direction  direction;
-  rand  tvip_apb_data       data;
-  rand  tvip_apb_strobe     strobe;
-  rand  tvip_apb_protection protection;
-  rand  bit                 slave_error;
+  rand  tvip_apb_address            address;
+  rand  tvip_apb_direction          direction;
+  rand  tvip_apb_data               data;
+  rand  tvip_apb_strobe             strobe;
+  rand  tvip_apb_privileged_access  privileged_access;
+  rand  tvip_apb_secure_access      secure_access;
+  rand  tvip_apb_access_type        access_type;  
+  rand  bit                         slave_error;
 
   function bit is_read();
     return (direction == TVIP_APB_READ) ? 1 : 0;
@@ -33,15 +35,29 @@ class tvip_apb_item extends tvip_common_item #(
     return (direction == TVIP_APB_WRITE) ? 1 : 0;
   endfunction
 
+  function bit [2:0] get_protection();
+    bit [2:0] protection;
+    protection[0] = privileged_access;
+    protection[1] = secure_access;
+    protection[2] = access_type;
+    return protection;
+  endfunction
+
+  function void set_protection(bit [2:0] protection);
+    privileged_access = tvip_apb_privileged_access'(protection[0]);
+    secure_access     = tvip_apb_secure_access'(protection[1]);
+    access_type       = tvip_apb_access_type'(protection[0]);
+  endfunction
+
   `tue_object_default_constructor(tvip_apb_item)
   `uvm_object_utils_begin(tvip_apb_item)
     `uvm_field_int(address, UVM_DEFAULT | UVM_HEX)
     `uvm_field_enum(tvip_apb_direction, direction, UVM_DEFAULT)
     `uvm_field_int(data  , UVM_DEFAULT | UVM_HEX)
     `uvm_field_int(strobe, UVM_DEFAULT | UVM_BIN)
-    `uvm_field_enum(tvip_apb_transaction_type , protection.transaction_type , UVM_DEFAULT)
-    `uvm_field_enum(tvip_apb_secure_access    , protection.secure_access    , UVM_DEFAULT)
-    `uvm_field_enum(tvip_apb_privileged_access, protection.privileged_access, UVM_DEFAULT)
+    `uvm_field_enum(tvip_apb_privileged_access, privileged_access, UVM_DEFAULT)
+    `uvm_field_enum(tvip_apb_secure_access    , secure_access    , UVM_DEFAULT)
+    `uvm_field_enum(tvip_apb_access_type      , access_type      , UVM_DEFAULT)
     `uvm_field_int(slave_error, UVM_DEFAULT | UVM_BIN)
   `uvm_object_utils_end
 endclass
@@ -95,7 +111,9 @@ class tvip_apb_slave_item extends tvip_apb_item;
     direction.rand_mode(0);
     address.rand_mode(0);
     strobe.rand_mode(0);
-    protection.rand_mode(0);
+    privileged_access.rand_mode(0);
+    secure_access.rand_mode(0);
+    access_type.rand_mode(0);
   endfunction
 
   constraint c_valid_data {

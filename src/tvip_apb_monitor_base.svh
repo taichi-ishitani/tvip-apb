@@ -54,6 +54,7 @@ class tvip_apb_monitor_base #(
     item            = create_item("master_item");
     item.address    = vif.monitor_cb.paddr;
     item.direction  = tvip_apb_direction'(vif.monitor_cb.pwrite);
+    item.set_protection(vif.monitor_cb.pprot);
     if (item.is_write()) begin
       item.data   = vif.monitor_cb.pwdata;
       item.strobe = vif.monitor_cb.pstrb;

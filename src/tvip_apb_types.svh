@@ -38,13 +38,7 @@ typedef enum bit {
 typedef enum bit {
   TVIP_APB_DATA_ACCESS        = 0,
   TVIP_APB_INSTRACTION_ACCESS = 1
-} tvip_apb_transaction_type;
-
-typedef struct packed {
-  tvip_apb_transaction_type   transaction_type;
-  tvip_apb_secure_access      secure_access;
-  tvip_apb_privileged_access  privileged_access;
-} tvip_apb_protection;
+} tvip_apb_access_type;
 
 typedef virtual tvip_apb_if tvip_apb_vif;
 
