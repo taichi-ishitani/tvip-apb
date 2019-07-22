@@ -80,6 +80,7 @@ class tvip_apb_master_driver extends tue_driver #(
 
   task do_setup();
     vif.master_cb.psel    <= '1;
+    vif.master_cb.penable <= '0;
     vif.master_cb.paddr   <= item.address;
     vif.master_cb.pwrite  <= item.is_write();
     vif.master_cb.pprot   <= item.get_protection();
