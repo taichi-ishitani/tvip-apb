@@ -44,7 +44,6 @@ class tvip_apb_master_ral_adapter extends uvm_reg_adapter;
     rw.addr     = apb_item.address;
     rw.kind     = (apb_item.is_write()) ? UVM_WRITE : UVM_READ;
     rw.data     = apb_item.data;
-    rw.byte_en  = (apb_item.is_write()) ? apb_item.strobe : '1;
     rw.status   = (apb_item.slave_error) ? UVM_NOT_OK : UVM_IS_OK;
   endfunction
 
