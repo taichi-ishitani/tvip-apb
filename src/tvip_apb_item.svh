@@ -15,8 +15,9 @@
 //------------------------------------------------------------------------------
 `ifndef TVIP_APB_ITEM_SVH
 `define TVIP_APB_ITEM_SVH
-class tvip_apb_item extends tvip_common_item #(
-  tvip_apb_configuration, tvip_apb_status
+class tvip_apb_item extends tue_sequence_item #(
+  .CONFIGURATION  (tvip_apb_configuration ),
+  .STATUS         (tvip_apb_status        )
 );
   rand  tvip_apb_address            address;
   rand  tvip_apb_direction          direction;
@@ -24,8 +25,17 @@ class tvip_apb_item extends tvip_common_item #(
   rand  tvip_apb_strobe             strobe;
   rand  tvip_apb_privileged_access  privileged_access;
   rand  tvip_apb_secure_access      secure_access;
-  rand  tvip_apb_access_type        access_type;  
+  rand  tvip_apb_access_type        access_type;
   rand  bit                         slave_error;
+  rand  int                         ipg;
+
+  constraint c_valid_ipg {
+    ipg >= -1;
+  }
+
+  constraint c_default_ipg {
+    soft ipg == -1;
+  }
 
   function bit is_read();
     return (direction == TVIP_APB_READ) ? 1 : 0;
@@ -49,6 +59,10 @@ class tvip_apb_item extends tvip_common_item #(
     access_type       = tvip_apb_access_type'(protection[0]);
   endfunction
 
+  function int get_ipg();
+    return (ipg >= 0) ? ipg : 0;
+  endfunction
+
   `tue_object_default_constructor(tvip_apb_item)
   `uvm_object_utils_begin(tvip_apb_item)
     `uvm_field_int(address, UVM_DEFAULT | UVM_HEX)
@@ -59,6 +73,7 @@ class tvip_apb_item extends tvip_common_item #(
     `uvm_field_enum(tvip_apb_secure_access    , secure_access    , UVM_DEFAULT)
     `uvm_field_enum(tvip_apb_access_type      , access_type      , UVM_DEFAULT)
     `uvm_field_int(slave_error, UVM_DEFAULT | UVM_BIN)
+    `uvm_field_int(ipg, UVM_DEFAULT | UVM_DEC | UVM_NOCOMPARE)
   `uvm_object_utils_end
 endclass
 

@@ -22,11 +22,9 @@
 package tvip_apb_pkg;
   import  uvm_pkg::*;
   import  tue_pkg::*;
-  import  tvip_common_pkg::*;
 
   `include  "uvm_macros.svh"
   `include  "tue_macros.svh"
-  `include  "tvip_common_macros.svh"
 
   `include  "tvip_apb_types.svh"
   `include  "tvip_apb_configuration.svh"
