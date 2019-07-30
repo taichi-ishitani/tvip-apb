@@ -43,6 +43,7 @@ class tvip_apb_master_ral_adapter extends uvm_reg_adapter;
     $cast(apb_item, bus_item);
     rw.addr     = apb_item.address;
     rw.kind     = (apb_item.is_write()) ? UVM_WRITE : UVM_READ;
+    rw.byte_en  = (apb_item.is_write()) ? apb_item.strobe : rw.byte_en;
     rw.data     = apb_item.data;
     rw.status   = (apb_item.slave_error) ? UVM_NOT_OK : UVM_IS_OK;
   endfunction

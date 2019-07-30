@@ -15,5 +15,5 @@
 //------------------------------------------------------------------------------
 `ifndef TVIP_APB_MASTER_RAL_PREDICTOR_SVH
 `define TVIP_APB_MASTER_RAL_PREDICTOR_SVH
-typedef uvm_reg_predictor #(tvip_apb_master_item) tvip_apb_master_ral_predictor;
+typedef tue_reg_predictor #(tvip_apb_master_item) tvip_apb_master_ral_predictor;
 `endif
