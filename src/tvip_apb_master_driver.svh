@@ -18,17 +18,8 @@
 class tvip_apb_master_driver extends tue_driver #(
   tvip_apb_configuration, tvip_apb_status, tvip_apb_master_item
 );
-  typedef enum {
-    IDLE,
-    SETUP,
-    ACCESS,
-    CONSUME_IPG
-  } e_state;
-
-  tvip_apb_vif          vif;
-  e_state               state;
-  tvip_apb_master_item  item;
-  int                   consumed_ipg;
+  protected tvip_apb_vif          vif;
+  protected tvip_apb_master_item  current_item;
 
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
@@ -36,102 +27,85 @@ class tvip_apb_master_driver extends tue_driver #(
   endfunction
 
   task run_phase(uvm_phase phase);
-    forever @(vif.master_cb or negedge vif.preset_n) begin
-      if (!vif.preset_n) begin
-        do_reset();
-      end
-      else begin
-        if ((state == ACCESS) && vif.master_cb.pack) begin
-          sample_response();
-        end
-
-        if (state == CONSUME_IPG) begin
-          consume_ipg();
-        end
-
-        if ((state == IDLE) && seq_item_port.has_do_available()) begin
-          get_next_item();
-        end
-
-        case (state)
-          SETUP:    do_setup();
-          ACCESS:   do_access();
-          default:  do_idle();
-        endcase
-      end
+    forever begin
+      do_reset();
+      fork
+        driver_thread();
+        @(negedge vif.preset_n);
+      join_any
     end
   endtask
 
-  task do_reset();
-    if (state inside {SETUP, ACCESS}) begin
+  protected virtual task do_reset();
+    if (current_item != null) begin
       finish_item();
     end
+
     vif.reset_master();
-    item  = null;
-    state = IDLE;
+    wait (vif.preset_n);
   endtask
 
-  task get_next_item();
-    seq_item_port.get_next_item(item);
-    void'(begin_tr(item));
-    consumed_ipg  = 0;
-    state         = SETUP;
+  protected virtual task driver_thread();
+    int ipg;
+
+    forever begin
+      wait_for_next_item();
+      drive_request();
+      wait_for_done();
+      sample_response();
+      drive_idle();
+
+      ipg = current_item.get_ipg();
+      finish_item();
+
+      repeat (ipg + 1) begin
+        @(vif.master_cb);
+      end
+    end
   endtask
 
-  task do_setup();
+  protected virtual task wait_for_next_item();
+    seq_item_port.get_next_item(current_item);
+    void'(begin_tr(current_item));
+    if (!vif.master_cb_edge.triggered) begin
+      @(vif.master_cb_edge);
+    end
+  endtask
+
+  protected virtual task drive_request();
     vif.master_cb.psel    <= '1;
-    vif.master_cb.penable <= '0;
-    vif.master_cb.paddr   <= item.address;
-    vif.master_cb.pwrite  <= item.is_write();
-    vif.master_cb.pprot   <= item.get_protection();
-    if (item.is_write()) begin
-      vif.master_cb.pwdata  <= item.data;
-      vif.master_cb.pstrb   <= item.strobe;
+    vif.master_cb.paddr   <= current_item.address;
+    vif.master_cb.pwrite  <= current_item.is_write();
+    vif.master_cb.pprot   <= current_item.get_protection();
+    if (current_item.is_write()) begin
+      vif.master_cb.pwdata  <= current_item.data;
+      vif.master_cb.pstrb   <= current_item.strobe;
     end
-    else begin
-      vif.master_cb.pwdata  <= '0;
-      vif.master_cb.pstrb   <= '0;
-    end
-    state = ACCESS;
-  endtask
 
-  task do_access();
+    @(vif.master_cb);
     vif.master_cb.penable <= '1;
   endtask
 
-  task do_idle();
+  protected virtual task wait_for_done();
+    wait (vif.master_cb.pready);
+  endtask
+
+  protected virtual task sample_response();
+    current_item.slave_error  = vif.master_cb.pslverr;
+    if (current_item.is_read()) begin
+      current_item.data = vif.master_cb.prdata;
+    end
+  endtask
+
+  protected virtual task drive_idle();
     vif.master_cb.psel    <= '0;
     vif.master_cb.penable <= '0;
-    vif.master_cb.paddr   <= '0;
-    vif.master_cb.pwrite  <= '0;
-    vif.master_cb.pprot   <= '0;
-    vif.master_cb.pwdata  <= '0;
-    vif.master_cb.pstrb   <= '0;
   endtask
 
-  task sample_response();
-    item.slave_error  = vif.master_cb.pslverr;
-    if (item.is_read()) begin
-      item.data = vif.master_cb.prdata;
-    end
-    finish_item();
-    state = CONSUME_IPG;
-  endtask
-
-  task consume_ipg();
-    if (consumed_ipg >= item.get_ipg()) begin
-      uvm_wait_for_nba_region();
-      item  = null;
-      state = IDLE;
-    end
-    else begin
-      ++consumed_ipg;
-    end
-  endtask
-
-  function void finish_item();
-    end_tr(item);
+  protected virtual function void finish_item();
+    end_tr(current_item);
     seq_item_port.item_done();
+    current_item  = null;
   endfunction
 
   `tue_component_default_constructor(tvip_apb_master_driver)

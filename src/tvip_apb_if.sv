@@ -90,6 +90,22 @@ interface tvip_apb_if (
     pwdata  = '0;
     pstrb   = '0;
   endfunction
+
+  event master_cb_edge;
+  event slave_cb_edge;
+  event monitor_cb_edge;
+
+  always @(master_cb) begin
+    ->master_cb_edge;
+  end
+
+  always @(slave_cb) begin
+    ->slave_cb_edge;
+  end
+
+  always @(monitor_cb) begin
+    ->monitor_cb_edge;
+  end
 endinterface
 
 `endif

@@ -20,10 +20,7 @@ class tvip_apb_monitor_base #(
 ) extends tue_param_monitor #(
   tvip_apb_configuration, tvip_apb_status, ITEM
 );
-  tvip_apb_vif  vif;
-
-  ITEM  item;
-  bit   in_progress;
+  protected tvip_apb_vif  vif;
 
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
@@ -31,45 +28,67 @@ class tvip_apb_monitor_base #(
   endfunction
 
   task run_phase(uvm_phase phase);
-    forever @(vif.monitor_cb) begin
-      if (!vif.preset_n) begin
-        do_reset();
-      end
-      else if ((!in_progress) && vif.monitor_cb.psel) begin
-        sample_request();
-      end
-      else if (in_progress && vif.monitor_cb.pack) begin
-        sample_response();
-      end
+    forever begin
+      do_reset();
+      fork
+        monitor_thread();
+        @(negedge vif.preset_n);
+      join_any
+      disable fork;
     end
   endtask
 
-  virtual function void do_reset();
-    in_progress = 0;
-    item        = null;
-  endfunction
+  virtual protected task do_reset();
+    wait (vif.preset_n === 1);
+  endtask
 
-  virtual function void sample_request();
-    in_progress     = 1;
-    item            = create_item("master_item");
-    item.address    = vif.monitor_cb.paddr;
-    item.direction  = tvip_apb_direction'(vif.monitor_cb.pwrite);
-    item.set_protection(vif.monitor_cb.pprot);
+  virtual protected task monitor_thread();
+    ITEM  item;
+
+    forever begin
+      wait_for_psel();
+      item  = create_item("item");
+
+      wait_for_penable();
+      sample_request(item);
+
+      wait_for_pready();
+      sample_response(item);
+      write_item(item);
+    end
+  endtask
+
+  virtual protected task wait_for_psel();
+    do begin
+      @(vif.monitor_cb);
+    end while (!vif.monitor_cb.psel);
+  endtask
+
+  virtual protected task wait_for_penable();
+    @(posedge vif.monitor_cb.penable);
+  endtask
+
+  virtual protected function void sample_request(ITEM item);
+    item.address            = vif.monitor_cb.paddr;
+    item.direction          = tvip_apb_direction'(vif.monitor_cb.pwrite);
+    item.privileged_access  = vif.monitor_cb.pprot[0];
+    item.secure_access      = vif.monitor_cb.pprot[1];
+    item.access_type        = vif.monitor_cb.pprot[2];
     if (item.is_write()) begin
       item.data   = vif.monitor_cb.pwdata;
       item.strobe = vif.monitor_cb.pstrb;
     end
   endfunction
 
-  virtual function void sample_response();
+  virtual protected task wait_for_pready();
+    wait (vif.master_cb.pready);
+  endtask
+
+  virtual protected function void sample_response(ITEM item);
     item.slave_error  = vif.monitor_cb.pslverr;
     if (item.is_read()) begin
       item.data = vif.monitor_cb.prdata;
     end
-
-    write_item(item);
-    item        = null;
-    in_progress = 0;
   endfunction
 
   `tue_component_default_constructor(tvip_apb_monitor_base)
