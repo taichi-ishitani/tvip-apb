@@ -33,6 +33,7 @@ class tvip_apb_master_driver extends tue_driver #(
         driver_thread();
         @(negedge vif.preset_n);
       join_any
+      disable fork;
     end
   endtask
 
