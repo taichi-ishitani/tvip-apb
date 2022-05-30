@@ -37,6 +37,34 @@ class tvip_apb_item extends tue_sequence_item #(
     soft ipg == -1;
   }
 
+  constraint c_valid_address {
+    (address >> this.configuration.address_width) == '0;
+  }
+
+  constraint c_valid_write_data {
+    if (direction == TVIP_APB_WRITE) {
+      (data >> this.configuration.data_width) == '0;
+    }
+    else {
+      data == 0;
+    }
+  }
+
+  constraint c_valid_strobe {
+    if (direction == TVIP_APB_WRITE) {
+      (strobe >> (this.configuration.data_width / 8)) == 0;
+    }
+    else {
+      strobe == 0;
+    }
+  }
+
+  constraint c_valid_read_data {
+    if (direction == TVIP_APB_READ) {
+      (data >> this.configuration.data_width) == 0;
+    }
+  }
+
   function bit is_read();
     return (direction == TVIP_APB_READ) ? 1 : 0;
   endfunction
@@ -78,73 +106,31 @@ class tvip_apb_item extends tue_sequence_item #(
 endclass
 
 class tvip_apb_master_item extends tvip_apb_item;
-  function new(string name = "tvip_apb_master_item");
-    super.new(name);
+  function void pre_randomize();
     slave_error.rand_mode(0);
+    c_valid_read_data.constraint_mode(0);
   endfunction
 
-  constraint c_valid_address {
-    if ((configuration != null) && (configuration.address_width < `TVIP_APB_MAX_ADDRESS_WIDTH)) {
-      (address >> configuration.address_width) == '0;
-    }
-  }
-
-  constraint c_valid_data {
-    if (direction == TVIP_APB_WRITE) {
-      if ((configuration != null) && (configuration.data_width < `TVIP_APB_MAX_DATA_WIDTH)) {
-        (data >> configuration.data_width) == '0;
-      }
-    }
-  }
-
-  constraint c_default_data {
-    if (direction == TVIP_APB_READ) {
-      soft data == '0;
-    }
-  }
-
-  constraint c_valid_strobe {
-    if (direction == TVIP_APB_WRITE) {
-      if ((configuration != null) && (configuration.data_width < `TVIP_APB_MAX_DATA_WIDTH)) {
-        (strobe >> (configuration.data_width / 8)) == '0;
-      }
-    }
-  }
-
-  constraint c_default_strobe {
-    if (direction == TVIP_APB_READ) {
-      soft strobe == '0;
-    }
-  }
-
+  `tue_object_default_constructor(tvip_apb_master_item)
   `uvm_object_utils(tvip_apb_master_item)
 endclass
 
 class tvip_apb_slave_item extends tvip_apb_item;
-  function new(string name = "tvip_apb_slave_item");
-    super.new(name);
+  function void pre_randomize();
     direction.rand_mode(0);
     address.rand_mode(0);
+    c_valid_address.constraint_mode(0);
+    data.rand_mode(is_read());
+    c_valid_write_data.constraint_mode(0);
+    c_valid_read_data.constraint_mode(is_read());
     strobe.rand_mode(0);
+    c_valid_strobe.constraint_mode(0);
     privileged_access.rand_mode(0);
     secure_access.rand_mode(0);
     access_type.rand_mode(0);
   endfunction
 
-  constraint c_valid_data {
-    if (direction == TVIP_APB_READ) {
-      if ((configuration != null) && (configuration.data_width < `TVIP_APB_MAX_DATA_WIDTH)) {
-        (data >> configuration.data_width) == '0;
-      }
-    }
-  }
-
-  function void pre_randomize();
-    if (direction == TVIP_APB_WRITE) begin
-      data.rand_mode(0);
-    end
-  endfunction
-
+  `tue_object_default_constructor(tvip_apb_slave_item)
   `uvm_object_utils(tvip_apb_slave_item)
 endclass
 `endif

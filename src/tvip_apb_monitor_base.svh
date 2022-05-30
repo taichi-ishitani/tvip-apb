@@ -65,15 +65,15 @@ class tvip_apb_monitor_base #(
   endtask
 
   virtual protected task wait_for_penable();
-    @(posedge vif.monitor_cb.penable);
+    @(vif.master_cb);
   endtask
 
   virtual protected function void sample_request(ITEM item);
     item.address            = vif.monitor_cb.paddr;
     item.direction          = tvip_apb_direction'(vif.monitor_cb.pwrite);
-    item.privileged_access  = vif.monitor_cb.pprot[0];
-    item.secure_access      = vif.monitor_cb.pprot[1];
-    item.access_type        = vif.monitor_cb.pprot[2];
+    item.privileged_access  = tvip_apb_privileged_access'(vif.monitor_cb.pprot[0]);
+    item.secure_access      = tvip_apb_secure_access'(vif.monitor_cb.pprot[1]);
+    item.access_type        = tvip_apb_access_type'(vif.monitor_cb.pprot[2]);
     if (item.is_write()) begin
       item.data   = vif.monitor_cb.pwdata;
       item.strobe = vif.monitor_cb.pstrb;
@@ -81,7 +81,9 @@ class tvip_apb_monitor_base #(
   endfunction
 
   virtual protected task wait_for_pready();
-    wait (vif.master_cb.pready);
+    while (!vif.monitor_cb.pready) begin
+      @(vif.monitor_cb);
+    end
   endtask
 
   virtual protected function void sample_response(ITEM item);
