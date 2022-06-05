@@ -88,7 +88,9 @@ class tvip_apb_master_driver extends tue_driver #(
   endtask
 
   protected virtual task wait_for_done();
-    wait (vif.master_cb.pready);
+    while (!vif.master_cb.pready) begin
+      @(vif.master_cb);
+    end
   endtask
 
   protected virtual task sample_response();
