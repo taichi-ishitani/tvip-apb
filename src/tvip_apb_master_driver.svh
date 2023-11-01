@@ -59,8 +59,8 @@ class tvip_apb_master_driver extends tue_driver #(
       ipg = current_item.get_ipg();
       finish_item();
 
-      repeat (ipg + 1) begin
-        @(vif.master_cb);
+      repeat (ipg) begin
+        @(vif.master_cb_edge);
       end
     end
   endtask
@@ -83,14 +83,14 @@ class tvip_apb_master_driver extends tue_driver #(
       vif.master_cb.pstrb   <= current_item.strobe;
     end
 
-    @(vif.master_cb);
+    @(vif.master_cb_edge);
     vif.master_cb.penable <= '1;
   endtask
 
   protected virtual task wait_for_done();
-    while (!vif.master_cb.pready) begin
-      @(vif.master_cb);
-    end
+    do begin
+      @(vif.master_cb_edge);
+    end while (!vif.master_cb.pready);
   endtask
 
   protected virtual task sample_response();
